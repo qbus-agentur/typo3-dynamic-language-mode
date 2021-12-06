@@ -1,0 +1,26 @@
+{
+    "name": "qbus/dlm",
+    "description": "Dynamic language mode (free vs connected)",
+    "type": "typo3-cms-extension",
+    "license": "GPL-3.0-or-later",
+    "authors": [
+        {
+            "name": "Benjamin Franzke",
+            "email": "benjaminfranzke@gmail.com"
+        }
+    ],
+    "require": {
+        "php": ">=7.2",
+        "typo3/cms-core": "^9.5 || ^10.4 || ^11.5"
+    },
+    "autoload": {
+        "psr-4": {
+            "Qbus\\DynamicLanguageMode\\": "Classes/"
+        }
+    },
+    "extra": {
+        "typo3/cms": {
+            "extension-key": "dlm"
+        }
+    }
+}
