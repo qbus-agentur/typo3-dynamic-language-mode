@@ -28,7 +28,7 @@ class DynamicLanguageMode implements MiddlewareInterface
 
         $site = $request->getAttribute('site');
         $default = $site->getLanguages()[0];
-	if ($lang->getLanguageId() !== $default->getLanguageId()) {
+        if ($lang->getLanguageId() !== $default->getLanguageId()) {
             // Check if page is in "Free mode" and apply a dynamic language configuration in that case
             $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('tt_content');
             $query = $queryBuilder
@@ -37,9 +37,20 @@ class DynamicLanguageMode implements MiddlewareInterface
                 ->where('l18n_parent = 0')
                 ->andWhere($queryBuilder->expr()->eq('t.sys_language_uid', $queryBuilder->createNamedParameter(intval($lang->getLanguageId()), \PDO::PARAM_INT)))
                 ->andWhere($queryBuilder->expr()->eq('t.pid', $queryBuilder->createNamedParameter(intval($pageArguments->getPageId()), \PDO::PARAM_INT)));
-            $count = $query->execute()->fetchColumn();
+            $countElements = $query->execute()->fetchColumn();
 
-            if ($count > 0) {
+	    $countPage = 0;
+	    if ($countElements > 0) {
+                $queryBuilderPage = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('pages');
+                $queryPage = $queryBuilderPage
+                    ->count('*')
+                    ->from('pages', 'p')
+                    ->where($queryBuilder->expr()->eq('p.pid', $queryBuilderPage->createNamedParameter(intval($pageArguments->getPageId()), \PDO::PARAM_INT)))
+                    ->andWhere($queryBuilder->expr()->eq('p.sys_language_uid', $queryBuilderPage->createNamedParameter(intval($lang->getLanguageId()), \PDO::PARAM_INT)));
+                $countPage = $queryPage->execute()->fetchColumn();
+            }
+
+            if ($countElements > 0 && $countPage > 0) {
                 \Closure::bind(function() use ($lang, $newId) {
                     $lang->fallbackType = 'free';
                     $lang->fallbackLanguageIds = [];
