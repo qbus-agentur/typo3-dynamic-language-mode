@@ -28,7 +28,7 @@ class DynamicLanguageMode implements MiddlewareInterface
 
         $site = $request->getAttribute('site');
         $default = $site->getLanguages()[0];
-        if ($lang->getLanguageId() !== $default->getLanguageId()) {
+        if ($lang->getFallbackType() === 'fallback' && $lang->getLanguageId() !== $default->getLanguageId()) {
             // Check if page is in "Free mode" and apply a dynamic language configuration in that case
             $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('tt_content');
             $query = $queryBuilder
