@@ -2,6 +2,7 @@
 declare(strict_types = 1);
 namespace Qbus\DynamicLanguageMode\Middleware;
 
+use Doctrine\DBAL\FetchMode;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
@@ -39,7 +40,12 @@ class DynamicLanguageMode implements MiddlewareInterface
                 ->andWhere($queryBuilder->expr()->eq('t.sys_language_uid', $queryBuilder->createNamedParameter(intval($lang->getLanguageId()), \PDO::PARAM_INT)))
                 ->andWhere($queryBuilder->expr()->eq('t.pid', $queryBuilder->createNamedParameter(intval($pageArguments->getPageId()), \PDO::PARAM_INT)))
                 ->groupBy('dlm_is_connected');
-            $translationStatus = $query->execute()->fetchAllKeyValue();
+            $stmt = $query->execute();
+
+            $translationStatus = [];
+            foreach ($stmt->fetchAll(FetchMode::NUMERIC) as [$key, $value]) {
+                $translationStatus[(int)$key] = $value;
+            }
             $countUnconnectedElements = $translationStatus[0] ?? 0;
             $countConnectedElements = $translationStatus[1] ?? 0;
 
