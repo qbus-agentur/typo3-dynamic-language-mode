@@ -39,8 +39,8 @@ class DynamicLanguageMode implements MiddlewareInterface
                 ->andWhere($queryBuilder->expr()->eq('t.pid', $queryBuilder->createNamedParameter(intval($pageArguments->getPageId()), \PDO::PARAM_INT)));
             $countElements = $query->execute()->fetchColumn();
 
-	    $countPage = 0;
-	    if ($countElements > 0) {
+            $countPage = 0;
+            if ($countElements > 0) {
                 $queryBuilderPage = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('pages');
                 $queryPage = $queryBuilderPage
                     ->count('*')
