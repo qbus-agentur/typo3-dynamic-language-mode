@@ -28,19 +28,41 @@ class DynamicLanguageMode implements MiddlewareInterface
 
         $site = $request->getAttribute('site');
         $default = $site->getLanguages()[0];
-        if ($lang->getFallbackType() === 'fallback' && $lang->getLanguageId() !== $default->getLanguageId()) {
-            // Check if page is in "Free mode" and apply a dynamic language configuration in that case
+        if ($lang->getFallbackType() !== 'free' && $lang->getLanguageId() !== $default->getLanguageId()) {
             $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('tt_content');
+            $queryBuilder->getConcreteQueryBuilder()->select(
+                '(l18n_parent != 0) AS dlm_is_connected',
+                "count('*') AS count"
+            );
             $query = $queryBuilder
-                ->count('*')
                 ->from('tt_content', 't')
-                ->where('l18n_parent = 0')
                 ->andWhere($queryBuilder->expr()->eq('t.sys_language_uid', $queryBuilder->createNamedParameter(intval($lang->getLanguageId()), \PDO::PARAM_INT)))
-                ->andWhere($queryBuilder->expr()->eq('t.pid', $queryBuilder->createNamedParameter(intval($pageArguments->getPageId()), \PDO::PARAM_INT)));
-            $countElements = $query->execute()->fetchColumn();
+                ->andWhere($queryBuilder->expr()->eq('t.pid', $queryBuilder->createNamedParameter(intval($pageArguments->getPageId()), \PDO::PARAM_INT)))
+                ->groupBy('dlm_is_connected');
+            $translationStatus = $query->execute()->fetchAllKeyValue();
+            $countUnconnectedElements = $translationStatus[0] ?? 0;
+            $countConnectedElements = $translationStatus[1] ?? 0;
+
+            $enableFallbackTypeFree = false;
+            if ($lang->getFallbackType() === 'strict') {
+                if ($countConnectedElements > 0 && $countUnconnectedElements > 0) {
+                    // Set fallbackType: free when page is in mixed-mode,
+                    // as fallbackType: strict will
+                    $enableFallbackTypeFree = true;
+                } else {
+                    // Stay with fallbackType: strict when page is in Free or Connected mode
+                    // as `fallbackType: strict` will be pretty much like `fallbackType: free`
+                    // in Free mode, but relations (e.g sys_file_metadata) will one be properly
+                    // translated with `fallbackType: strict`.
+                    $enableFallbackTypeFree = false;
+                }
+            } elseif ($countUnconnectedElements > 0) {
+                // Page is in "Free mode" (or mixed mode), apply `fallbackType: free`
+                $enableFallbackTypeFree = true;
+            }
 
             $countPage = 0;
-            if ($countElements > 0) {
+            if ($enableFallbackTypeFree) {
                 $queryBuilderPage = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('pages');
                 $queryPage = $queryBuilderPage
                     ->count('*')
@@ -49,8 +71,7 @@ class DynamicLanguageMode implements MiddlewareInterface
                     ->andWhere($queryBuilder->expr()->eq('p.sys_language_uid', $queryBuilderPage->createNamedParameter(intval($lang->getLanguageId()), \PDO::PARAM_INT)));
                 $countPage = $queryPage->execute()->fetchColumn();
             }
-
-            if ($countElements > 0 && $countPage > 0) {
+            if ($enableFallbackTypeFree && $countPage > 0) {
                 \Closure::bind(function() use ($lang, $newId) {
                     $lang->fallbackType = 'free';
                     $lang->fallbackLanguageIds = [];
