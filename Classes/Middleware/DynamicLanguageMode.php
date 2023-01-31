@@ -45,7 +45,7 @@ class DynamicLanguageMode implements MiddlewareInterface
                 $queryPage = $queryBuilderPage
                     ->count('*')
                     ->from('pages', 'p')
-                    ->where($queryBuilder->expr()->eq('p.pid', $queryBuilderPage->createNamedParameter(intval($pageArguments->getPageId()), \PDO::PARAM_INT)))
+                    ->where($queryBuilder->expr()->eq('p.l10n_parent', $queryBuilderPage->createNamedParameter(intval($pageArguments->getPageId()), \PDO::PARAM_INT)))
                     ->andWhere($queryBuilder->expr()->eq('p.sys_language_uid', $queryBuilderPage->createNamedParameter(intval($lang->getLanguageId()), \PDO::PARAM_INT)));
                 $countPage = $queryPage->execute()->fetchColumn();
             }
