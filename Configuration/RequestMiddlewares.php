@@ -16,6 +16,7 @@ return [
             'before' => [
                 /* Note: prepare-tsfe-rendering is not a Stable target and may be removed in TYPO3 v10 */
                 'typo3/cms-frontend/prepare-tsfe-rendering',
+                'typo3/cms-frontend/tsfe',
             ],
             'after' => [
                  'typo3/cms-frontend/page-argument-validator'
